@@ -1,0 +1,138 @@
+--Saranya (1033320) WEEK 4 ASSESSMENT on mysql
+use AdventureWorks2022
+--Database used- AdventureWorks2022
+select * from production.Product --query to retrieve all data in the table production.product
+
+--problem 1: listing product names and prices: a query to retrieve names and list prices of all products in production.product
+select name, listprice from production.Product --usig select to retrieve data
+
+--problem 2: 
+select * from sales.Customer; --we can see that there are no columns with names, email addresses and city names.
+--but there are other tables with these details. names are available in person.person, email address in person.emailaddress and city in person.address. 
+--so combining these columns of the tables into a new table as newcustomertable and retriveing data from it.
+SELECT 
+    p.FirstName,
+    p.LastName,
+    e.EmailAddress,
+    a.City,
+	CONCAT(p.FirstName, ' ', p.LastName) as name --concatination operation to combine first and last names
+INTO Customer --name of new table
+FROM 
+    Person.Person p
+JOIN --joining
+    Person.EmailAddress e ON p.BusinessEntityID = e.BusinessEntityID
+JOIN 
+    Person.Address a ON p.BusinessEntityID = a.AddressID
+JOIN
+    Sales.Customer c ON p.BusinessEntityID = c.PersonID;
+--retriveing the data
+select name,EmailAddress,City from Customer where city='seattle';
+
+--problem 3:calculating total sales for a product
+SELECT p.Name AS ProductName, SUM(sod.LineTotal) AS TotalSalesAmount --name is obtained as product name
+FROM Sales.SalesOrderDetail sod --sod is alias name for sales order detail
+INNER JOIN Production.Product p ON sod.ProductID = p.ProductID --performing innerjoin operation on both tables 
+WHERE sod.ProductID = 793
+GROUP BY p.Name;
+
+--problem 4: listing employees by job title
+select * from HumanResources.Employee; --we can see that jobtitle is available in this table but not names. names are available in person.person table
+SELECT 
+    p.LastName AS LastName, 
+    p.FirstName AS FirstName,
+    e.JobTitle
+FROM 
+    HumanResources.Employee e
+JOIN 
+    Person.Person p ON e.BusinessEntityID = p.BusinessEntityID
+ORDER BY 
+    e.JobTitle ASC; --ascending order
+
+--problem 5: order details of the customer
+select * from Sales.SalesOrderHeader;
+select * from Sales.SalesOrderDetail;
+select * from Production.Product;
+SELECT 
+    p.Name AS ProductName,
+    sod.OrderQty
+FROM 
+    Sales.SalesOrderHeader soh
+JOIN --joining the tables
+    Sales.SalesOrderDetail sod ON soh.SalesOrderID = sod.SalesOrderID
+JOIN 
+    Production.Product p ON sod.ProductID = p.ProductID
+WHERE 
+    soh.CustomerID = 29485; --given customerid
+
+--problem 6: find orders placed by salesperson
+select * from sales.salesorderheader;
+select * from HumanResources.Employee;
+SELECT 
+    soh.SalesOrderID, --from soh
+    soh.OrderDate,  --order date from soh
+    CONCAT(pp.FirstName, ' ', pp.LastName) AS CustomerName
+FROM 
+    Sales.SalesOrderHeader soh
+JOIN 
+    Sales.Customer c ON soh.CustomerID = c.CustomerID
+JOIN 
+    Person.Person pp ON c.PersonID = pp.BusinessEntityID --located customer name based on salespersonid
+WHERE 
+    soh.SalesPersonID = 276;
+
+--problem 7:identifying inactive customers
+SELECT 
+	CONCAT(c.FirstName,' ',c.LastName) as name, --concating first and last names
+    e.EmailAddress
+FROM 
+    Person.Person c --names are obtained from person.person
+JOIN 
+    Person.EmailAddress e ON c.BusinessEntityID = e.BusinessEntityID --email address is found in person.emailaddress table
+LEFT JOIN 
+    Sales.SalesOrderHeader soh ON c.BusinessEntityID = soh.CustomerID --customerid's are checked on soh.
+WHERE 
+    soh.SalesOrderID IS NULL;
+
+--problem 8: calculate average sales per category
+-- Select category name and average sales amount
+-- Select category name and average sales amount
+SELECT 
+    Production.ProductCategory.Name AS CategoryName,  -- Select and alias the category name from ProductCategory table
+    AVG(Sales.SalesOrderDetail.OrderQty * Sales.SalesOrderDetail.UnitPrice) AS AverageSalesAmount  -- Calculate average sales amount as OrderQty * UnitPrice and alias it
+-- From ProductCategory, ProductSubcategory, Product, and SalesOrderDetail tables
+FROM 
+    Production.ProductCategory  -- ProductCategory table
+JOIN 
+    Production.ProductSubcategory ON Production.ProductCategory.ProductCategoryID = Production.ProductSubcategory.ProductCategoryID  -- Join ProductCategory with ProductSubcategory based on ProductCategoryID
+JOIN 
+    Production.Product ON Production.ProductSubcategory.ProductSubcategoryID = Production.Product.ProductSubcategoryID  -- Join ProductSubcategory with Product based on ProductSubcategoryID
+JOIN 
+    Sales.SalesOrderDetail ON Production.Product.ProductID = Sales.SalesOrderDetail.ProductID  -- Join Product with SalesOrderDetail based on ProductID
+-- Group results by category name
+GROUP BY 
+    Production.ProductCategory.Name;  -- Group by category name
+
+--problem 9: finding top selling products
+-- Select product name and total quantity sold for the top 10 best-selling products
+SELECT TOP 10
+    p.Name AS ProductName,  -- Alias for product name from Product table
+    SUM(sod.OrderQty) AS TotalQuantitySold  -- Calculate and sum order quantities as total quantity sold
+-- From Product and SalesOrderDetail tables
+FROM 
+    Production.Product p  -- Alias for Product table
+JOIN 
+    Sales.SalesOrderDetail sod ON p.ProductID = sod.ProductID  -- Join Product with SalesOrderDetail based on ProductID
+-- Group results by product name
+GROUP BY 
+    p.Name  -- Group by product name
+-- Order results by total quantity sold in descending order
+ORDER BY 
+    TotalQuantitySold DESC;  -- Order by total quantity sold in descending order
+
+--problem 10: identifying late shipments
+select * from Sales.SalesOrderHeader;
+select salesorderid, orderdate, shipdate from sales.SalesOrderHeader where shipdate < duedate;
+
+
+
+
